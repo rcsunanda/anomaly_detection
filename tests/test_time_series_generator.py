@@ -1,0 +1,40 @@
+"""
+Tests for TimeSeriesGenerator
+"""
+
+import anomaly_detection.time_series_generator as gen
+import math
+import matplotlib.pyplot as plt
+
+
+###################################################################################################
+"""
+Generate a 2-D time series and plot
+"""
+
+def test_generate_time_series():
+
+    dim1_func = math.sin
+    dim2_func = math.cos
+
+    generator = gen.TimeSeriesGenerator(2, [dim1_func, dim2_func])
+    print(generator)
+
+    series = generator.generate_time_series((0, 2*math.pi), 100, 0)
+
+    # Plot
+    t = [point.t for point in series]
+    x1 = [point.X[0] for point in series]
+    x2 = [point.X[1] for point in series]
+    plt.scatter(t, x1)
+    plt.scatter(t, x2)
+
+    plt.show()
+
+
+
+###################################################################################################
+
+# Call test functions
+
+test_generate_time_series()
