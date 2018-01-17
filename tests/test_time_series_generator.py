@@ -17,17 +17,15 @@ def test_generate_time_series():
     dim1_func = math.sin
     dim2_func = math.cos
 
-    generator = gen.TimeSeriesGenerator(2, [dim1_func, dim2_func])
-    print(generator)
-
-    series = generator.generate_time_series((0, 2*math.pi), 100, 0)
+    series = gen.generate_time_series(dim=2, t_range=(0, 2*math.pi),
+                                      count=100, functions=[dim1_func, dim2_func], is_anomolous=0)
 
     # Plot
     t = [point.t for point in series]
     x1 = [point.X[0] for point in series]
     x2 = [point.X[1] for point in series]
-    plt.scatter(t, x1)
-    plt.scatter(t, x2)
+    plt.plot(t, x1)
+    plt.plot(t, x2)
 
     plt.show()
 
