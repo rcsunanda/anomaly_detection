@@ -10,7 +10,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
-
+from keras.utils.vis_utils import plot_model
 
 """
 Helper function
@@ -33,8 +33,9 @@ def generate_trig_series(dim, range):
     else:
         assert(False)
 
-    series = gen.generate_time_series(dim=dim, t_range=range,
-                                      count=1000, functions=functions, is_anomolous=0)
+    series = gen.generate_time_series(dim=dim, t_range=range, count=1000,
+                                      functions=functions, is_anomolous=0,
+                                      add_noise=True, noise_var=0.01)
 
     return series
 
@@ -52,24 +53,6 @@ def plot_series(series, title):
     plt.xlabel("t")
     plt.ylabel("y")
     plt.legend(loc='upper right')
-
-
-# Given a series with multiple timesteps, extract the series for each timestep
-# Return those multiple series in a tuple
-def seperate_multi_timestep_series(mult_series, dim, timesteps):
-    dataset_size = len(mult_series)
-    ret_mult_series = (np.zeros((dataset_size, dim)),) * timesteps
-
-    n = 0
-    for sample in mult_series:
-        for step in range(timesteps):
-            curr_series = ret_mult_series[step]
-            for d in range(dim):
-                curr_series[n][d] = sample[step+d]
-
-        n += 1
-
-    return ret_mult_series
 
 
 ###################################################################################################
@@ -92,8 +75,12 @@ def test_LSTM_model():
     # Create network
     model = Sequential()
     model.add(LSTM(hidden_layer_units, input_shape=(input_timesteps, input_layer_units)))
+    # model.add(LSTM(hidden_layer_units, return_sequences=True))
     model.add(Dense(output_layer_units))
     model.compile(loss='mae', optimizer='adam')
+
+    print(model.summary())
+    # plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
 
     # Training params
     batch_size = 20 # Mini batch size in GD/ other algorithm
@@ -121,8 +108,8 @@ def test_LSTM_model():
     Y_predicted = model.predict(X_test)
 
     # Seperate out predicted multiple timeseries (for multiple output timesteps)
-    Y_predicted_multi_series = seperate_multi_timestep_series(Y_predicted, dimension, output_timesteps)
-    Y_true_multi_series = seperate_multi_timestep_series(Y_test, dimension, output_timesteps)
+    Y_predicted_multi_series = gen.seperate_multi_timestep_series(Y_predicted, dimension, output_timesteps)
+    Y_true_multi_series = gen.seperate_multi_timestep_series(Y_test, dimension, output_timesteps)
 
     # Plot each of above output series
     for i in range(output_timesteps):

@@ -7,7 +7,7 @@ import numpy as np
 
 
 # Generate time series of given size
-def generate_time_series(dim, t_range, count, functions, is_anomolous):
+def generate_time_series(dim, t_range, count, functions, is_anomolous, add_noise=False, noise_var=1):
     assert (len(t_range) == 2)
     assert (len(functions) == dim)
 
@@ -15,13 +15,17 @@ def generate_time_series(dim, t_range, count, functions, is_anomolous):
     series = []
     # Sample value for each dimension
     for idx in range(count):
-        sample_X = []
+        sample_X = np.zeros((dim,))
         t = t_vals[idx]
 
         for d in range(dim):
             func = functions[d]
             dim_sample_val = func(t)
-            sample_X.append(dim_sample_val)
+            sample_X[d] = dim_sample_val
+
+        if add_noise:
+            noise_vec = np.random.multivariate_normal(np.zeros(dim), np.eye(dim)*noise_var)
+            sample_X = np.add(sample_X, noise_vec)
 
         series.append(data_point.DataPoint(t, sample_X, is_anomolous, -1))
 
@@ -33,16 +37,13 @@ def prepare_dataset(series_points, input_timesteps, output_timesteps):
     dataset_size = len(series_points)
     data_dim = len(series_points[0].X)
 
+    # Cannot go beyond (not enough datapoints to gather past and future points)
+    output_dataset_size = dataset_size - input_timesteps - output_timesteps
+
     X = np.zeros((dataset_size, input_timesteps, data_dim))
     Y = np.zeros((dataset_size, data_dim * output_timesteps))
 
-    # Append a copy last element to series_points (to prepare Y)
-    # last_point = series_points[-1]
-    # series_points.append(data_point.DataPoint(
-    #     last_point.t, last_point.X, last_point.true_is_anomaly, last_point.predicted_is_anomaly))
-
-    iter_end = dataset_size - input_timesteps - output_timesteps    # Cannot go beyond (no enough datapoints to gather past and future points)
-    for idx in range(iter_end):
+    for idx in range(output_dataset_size):
         # Prepare X with current and previous timesteps
         step = 0
         for j in range(idx, idx + input_timesteps):
@@ -87,3 +88,22 @@ def convert_to_datapoint_series(input_series, t_range):
         output_series.append(data_point.DataPoint(t, sample_X, -1, -1))
 
     return output_series
+
+
+# Given a series with multiple timesteps, extract the series for each timestep
+# Return those multiple series in a tuple
+def seperate_multi_timestep_series(mult_series, dim, timesteps):
+    dataset_size = len(mult_series)
+    ret_mult_series = (np.zeros((dataset_size, dim)),) * timesteps
+
+    n = 0
+    for sample in mult_series:
+        for step in range(timesteps):
+            curr_series = ret_mult_series[step]
+            for d in range(dim):
+                curr_series[n][d] = sample[step+d]
+
+        n += 1
+
+    return ret_mult_series
+
