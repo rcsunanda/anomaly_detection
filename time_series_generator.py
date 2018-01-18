@@ -28,30 +28,39 @@ def generate_time_series(dim, t_range, count, functions, is_anomolous):
     return series
 
 
-def prepare_dataset(series_points, time_steps):
+def prepare_dataset(series_points, input_timesteps, output_timesteps):
 
     dataset_size = len(series_points)
     data_dim = len(series_points[0].X)
 
-    X = np.zeros((dataset_size, data_dim))
-    Y = np.zeros((dataset_size, data_dim))
+    X = np.zeros((dataset_size, input_timesteps, data_dim))
+    Y = np.zeros((dataset_size, data_dim * output_timesteps))
 
     # Append a copy last element to series_points (to prepare Y)
-    last_point = series_points[-1]
-    series_points.append(data_point.DataPoint(
-        last_point.t, last_point.X, last_point.true_is_anomaly, last_point.predicted_is_anomaly))
+    # last_point = series_points[-1]
+    # series_points.append(data_point.DataPoint(
+    #     last_point.t, last_point.X, last_point.true_is_anomaly, last_point.predicted_is_anomaly))
 
-    for idx in range(dataset_size):
-        curr_point = series_points[idx]
-        next_point = series_points[idx + 1]
-        for dim in range(data_dim):
-            X[idx][dim] = curr_point.X[dim]
-            Y[idx][dim] = next_point.X[dim]
+    iter_end = dataset_size - input_timesteps - output_timesteps    # Cannot go beyond (no enough datapoints to gather past and future points)
+    for idx in range(iter_end):
+        # Prepare X with current and previous timesteps
+        step = 0
+        for j in range(idx, idx + input_timesteps):
+            point = series_points[j]
+            for dim in range(data_dim):
+                X[idx][step][dim] = point.X[dim]
+            step += 1
 
-    X = X.reshape((dataset_size, time_steps, data_dim))
-    Y = Y.reshape((dataset_size, data_dim))  ## Is this necessary? Isn't Y already in this shape?
+        # Prepare Y with next timesteps
+        future_start = idx + input_timesteps
+        step = 0
+        for k in range(future_start, future_start + output_timesteps):
+            future_point = series_points[k]
+            for dim in range(data_dim):
+                Y[idx][step+dim] = future_point.X[dim]
+            step += 1
 
-    # X is numpy array with shape (dataset_size, time_steps, data_dim)
+    # X is numpy array with shape (dataset_size, input_timesteps, data_dim)
     # Y is numpy array with shape (dataset_size, data_dim)
     return (X, Y)
 
