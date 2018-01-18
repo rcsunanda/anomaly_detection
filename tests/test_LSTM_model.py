@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error
 Helper function
 """
 # range is a tuple with (start, end) for time variable
-def generate_trig_series(dim, t_range):
+def generate_trig_series(dim, t_range, anomaly_rate=0):
     def dim1_func(x, d):
         return math.sin(x)
 
@@ -38,13 +38,13 @@ def generate_trig_series(dim, t_range):
         assert False
 
     series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
-                                      functions=functions, is_anomolous=0,
+                                      functions=functions, anomaly_rate=anomaly_rate,
                                       add_noise=True, noise_var=0.01)
 
     return series
 
 
-def generate_complex_series(dim, t_range):
+def generate_complex_series(dim, t_range, anomaly_rate=0):
 
     def damped_sine(x, d):
         return (math.e**x) * (math.sin(2 * math.pi * x))
@@ -65,13 +65,13 @@ def generate_complex_series(dim, t_range):
         assert False
 
     series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
-                                      functions=functions, is_anomolous=0,
+                                      functions=functions, anomaly_rate=anomaly_rate,
                                       add_noise=True, noise_var=0.01)
 
     return series
 
 
-def generate_high_dim_complex_series(dim, t_range):
+def generate_high_dim_complex_series(dim, t_range, anomaly_rate=0):
 
     def damped_sine(x, d):
         return (d+1) * (math.e**x) * (math.sin(2 * math.pi * x))
@@ -90,8 +90,8 @@ def generate_high_dim_complex_series(dim, t_range):
         functions.append(all_functions[func_index])
 
     series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
-                                      functions=functions, is_anomolous=0,
-                                      add_noise=True, noise_var=0.01)
+                                      functions=functions, anomaly_rate=anomaly_rate,
+                                      add_noise=True, noise_var=0.005)
 
     return series
 
@@ -121,9 +121,8 @@ def test_LSTM_model():
     trig_train_t_range = (-math.pi, math.pi)
     complex_train_t_range = (-1, 1)
 
-    dimension = 50
-    train_series = time_series_gen_function(dimension, complex_train_t_range)
-    plot_series(train_series, "Training series")
+    dimension = 5
+    train_series = time_series_gen_function(dimension, complex_train_t_range, anomaly_rate=0)
 
     # LSTM Architecture
     input_timesteps = 4
@@ -149,6 +148,8 @@ def test_LSTM_model():
 
     # Train network
     gen.scale_series(train_series)
+    plot_series(train_series, "Training series")
+
     X, Y = gen.prepare_dataset(train_series, input_timesteps, output_timesteps)
 
     history = model.fit(X, Y, epochs=epcohs, batch_size=batch_size, verbose=2)
@@ -167,8 +168,9 @@ def test_LSTM_model():
     trig_test_t_range = (-2*math.pi, 2*math.pi)
     complex_test_t_range = (-2, 2)
     test_t_range = complex_test_t_range
-
-    test_series = time_series_gen_function(dimension, test_t_range)
+    anomaly_rate = 0.15
+    
+    test_series = time_series_gen_function(dimension, test_t_range, anomaly_rate)
     gen.scale_series(test_series)
     X_test, Y_test = gen.prepare_dataset(test_series, input_timesteps, output_timesteps)
 

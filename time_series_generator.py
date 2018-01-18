@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 # Generate time series of given size
-def generate_time_series(dim, t_range, count, functions, is_anomolous, add_noise=False, noise_var=1):
+def generate_time_series(dim, t_range, count, functions, anomaly_rate=0, add_noise=False, noise_var=1):
     assert (len(t_range) == 2)
     assert (len(functions) == dim)
 
@@ -28,7 +28,21 @@ def generate_time_series(dim, t_range, count, functions, is_anomolous, add_noise
             noise_vec = np.random.multivariate_normal(np.zeros(dim), np.eye(dim)*noise_var)
             sample_X = np.add(sample_X, noise_vec)
 
-        series.append(data_point.DataPoint(t, sample_X, is_anomolous, -1))
+        series.append(data_point.DataPoint(t, sample_X, False, -1))
+
+    # Set anomolous points
+
+    anomaly_count = int(count * anomaly_rate)
+    anomalous_point_indexes = np.random.randint(low=0, high=count, size=anomaly_count)
+    for an_idx in anomalous_point_indexes:
+        point = series[an_idx]
+
+        low = np.add(point.X, np.ones(dim))
+        high = np.subtract(point.X, np.ones(dim))
+        deviation_vec = np.random.uniform(low, high)
+
+        point.X = np.add(point.X, deviation_vec)
+        point.true_is_anomaly = True
 
     return series
 
