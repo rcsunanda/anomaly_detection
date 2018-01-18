@@ -11,6 +11,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.utils.vis_utils import plot_model
+from sklearn.metrics import mean_squared_error
 
 """
 Helper function
@@ -62,11 +63,11 @@ Fit an LSTM network to a 2-D time series prediction
 """
 def test_LSTM_model():
     dimension = 3
-    train_series = generate_trig_series(dimension, (0, 2*math.pi))
+    train_series = generate_trig_series(dimension, (-math.pi, math.pi))
     plot_series(train_series, "Training series")
 
     # LSTM Architecture
-    input_timesteps = 10
+    input_timesteps = 4
     output_timesteps = 1
     input_layer_units = dimension   # Dimensionality of time series data
     hidden_layer_units = 50
@@ -118,6 +119,9 @@ def test_LSTM_model():
     for i in range(output_timesteps):
         predicted_series = Y_predicted_multi_series[i]
         true_series = Y_true_multi_series[i]
+
+        rmse = math.sqrt(mean_squared_error(true_series, predicted_series))
+        print("output_series_no={}, rmse={}".format(i, rmse))
 
         predicted_dp_series = gen.convert_to_datapoint_series(predicted_series, test_t_range)
         true_dp_series = gen.convert_to_datapoint_series(true_series, test_t_range)
