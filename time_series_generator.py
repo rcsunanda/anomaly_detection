@@ -21,7 +21,7 @@ def generate_time_series(dim, t_range, count, functions, is_anomolous, add_noise
 
         for d in range(dim):
             func = functions[d]
-            dim_sample_val = func(t)
+            dim_sample_val = func(t, d)
             sample_X[d] = dim_sample_val
 
         if add_noise:

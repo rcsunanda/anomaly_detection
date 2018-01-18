@@ -18,12 +18,14 @@ Helper function
 """
 # range is a tuple with (start, end) for time variable
 def generate_trig_series(dim, t_range):
+    def dim1_func(x, d):
+        return math.sin(x)
 
-    dim1_func = math.sin
-    dim2_func = math.cos
+    def dim2_func(x, d):
+        return math.cos(x)
 
-    theta = math.pi/6
-    def dim3_func(x):
+    def dim3_func(x, d):
+        theta = math.pi / 6
         return 3*math.sin(x+theta)
 
     if dim == 1:
@@ -44,13 +46,13 @@ def generate_trig_series(dim, t_range):
 
 def generate_complex_series(dim, t_range):
 
-    def damped_sine(x):
+    def damped_sine(x, d):
         return (math.e**x) * (math.sin(2 * math.pi * x))
 
-    def cubic_func(x):
+    def cubic_func(x, d):
         return x**3 - 6 * x**2 + 4*x + 12
 
-    def freq_increasing_sine(x):
+    def freq_increasing_sine(x, d):
         return math.sin(2 * math.pi * math.e**x)
 
     if dim == 1:
@@ -61,6 +63,31 @@ def generate_complex_series(dim, t_range):
         functions = [damped_sine, cubic_func, freq_increasing_sine]
     else:
         assert False
+
+    series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
+                                      functions=functions, is_anomolous=0,
+                                      add_noise=True, noise_var=0.01)
+
+    return series
+
+
+def generate_high_dim_complex_series(dim, t_range):
+
+    def damped_sine(x, d):
+        return (d+1) * (math.e**x) * (math.sin(2 * math.pi * x))
+
+    def cubic_func(x, d):
+        return (d+1) * x**3 - (d+1) * 6 * x**2 + 4*x + 12
+
+    def freq_increasing_sine(x, d):
+        return (d+1) * math.sin(2 * math.pi * math.e**x)
+
+    all_functions = [damped_sine, cubic_func, freq_increasing_sine]
+
+    functions = []
+    for d in range(dim):
+        func_index = d % 3
+        functions.append(all_functions[func_index])
 
     series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
                                       functions=functions, is_anomolous=0,
@@ -90,11 +117,11 @@ Fit an LSTM network to a 2-D time series prediction
 """
 def test_LSTM_model():
 
-    time_series_gen_function = generate_complex_series
+    time_series_gen_function = generate_high_dim_complex_series
     trig_train_t_range = (-math.pi, math.pi)
     complex_train_t_range = (-1, 1)
 
-    dimension = 3
+    dimension = 50
     train_series = time_series_gen_function(dimension, complex_train_t_range)
     plot_series(train_series, "Training series")
 
