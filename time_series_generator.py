@@ -4,6 +4,7 @@ TimeSeriesGenerator class
 
 import anomaly_detection.data_point as data_point
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 
 # Generate time series of given size
@@ -30,6 +31,23 @@ def generate_time_series(dim, t_range, count, functions, is_anomolous, add_noise
         series.append(data_point.DataPoint(t, sample_X, is_anomolous, -1))
 
     return series
+
+
+def scale_series(series):
+
+    dataset_size = len(series)
+    data_dim = len(series[0].X)
+
+    X = np.zeros((dataset_size, data_dim))
+
+    for i, point in enumerate(series):
+        X[i] = point.X
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled = scaler.fit_transform(X)
+
+    for i, point in enumerate(series):
+        point.X = scaled[i]
 
 
 def prepare_dataset(series_points, input_timesteps, output_timesteps):

@@ -21,8 +21,9 @@ def generate_trig_series(dim, range):
     dim1_func = math.sin
     dim2_func = math.cos
 
+    theta = math.pi/6
     def dim3_func(x):
-        return 0.5*math.sin(x)
+        return 3*math.sin(x+theta)
 
     if (dim == 1):
         functions = [dim1_func]
@@ -87,6 +88,7 @@ def test_LSTM_model():
     epcohs = 20 # 50 is good
 
     # Train network
+    gen.scale_series(train_series)
     X, Y = gen.prepare_dataset(train_series, input_timesteps, output_timesteps)
 
     history = model.fit(X, Y, epochs=epcohs, batch_size=batch_size, verbose=2)
@@ -103,6 +105,7 @@ def test_LSTM_model():
     # Predict on test data
     test_t_range = (-2*math.pi, 2*math.pi)
     test_series = generate_trig_series(dimension, test_t_range)
+    gen.scale_series(test_series)
     X_test, Y_test = gen.prepare_dataset(test_series, input_timesteps, output_timesteps)
 
     Y_predicted = model.predict(X_test)
@@ -134,3 +137,4 @@ def test_LSTM_model():
 # Call test functions
 
 test_LSTM_model()
+
