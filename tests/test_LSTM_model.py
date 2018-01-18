@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error
 Helper function
 """
 # range is a tuple with (start, end) for time variable
-def generate_trig_series(dim, range):
+def generate_trig_series(dim, t_range):
 
     dim1_func = math.sin
     dim2_func = math.cos
@@ -26,16 +26,43 @@ def generate_trig_series(dim, range):
     def dim3_func(x):
         return 3*math.sin(x+theta)
 
-    if (dim == 1):
+    if dim == 1:
         functions = [dim1_func]
-    elif (dim == 2):
+    elif dim == 2:
         functions = [dim1_func, dim2_func]
-    elif (dim == 3):
+    elif dim == 3:
         functions = [dim1_func, dim2_func, dim3_func]
     else:
-        assert(False)
+        assert False
 
-    series = gen.generate_time_series(dim=dim, t_range=range, count=1000,
+    series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
+                                      functions=functions, is_anomolous=0,
+                                      add_noise=True, noise_var=0.01)
+
+    return series
+
+
+def generate_complex_series(dim, t_range):
+
+    def damped_sine(x):
+        return (math.e**x) * (math.sin(2 * math.pi * x))
+
+    def cubic_func(x):
+        return x**3 - 6 * x**2 + 4*x + 12
+
+    def freq_increasing_sine(x):
+        return math.sin(2 * math.pi * math.e**x)
+
+    if dim == 1:
+        functions = [damped_sine]
+    elif dim == 2:
+        functions = [damped_sine, cubic_func]
+    elif dim == 3:
+        functions = [damped_sine, cubic_func, freq_increasing_sine]
+    else:
+        assert False
+
+    series = gen.generate_time_series(dim=dim, t_range=t_range, count=1000,
                                       functions=functions, is_anomolous=0,
                                       add_noise=True, noise_var=0.01)
 
@@ -62,8 +89,13 @@ def plot_series(series, title):
 Fit an LSTM network to a 2-D time series prediction
 """
 def test_LSTM_model():
+
+    time_series_gen_function = generate_complex_series
+    trig_train_t_range = (-math.pi, math.pi)
+    complex_train_t_range = (-1, 1)
+
     dimension = 3
-    train_series = generate_trig_series(dimension, (-math.pi, math.pi))
+    train_series = time_series_gen_function(dimension, complex_train_t_range)
     plot_series(train_series, "Training series")
 
     # LSTM Architecture
@@ -104,8 +136,12 @@ def test_LSTM_model():
 
 
     # Predict on test data
-    test_t_range = (-2*math.pi, 2*math.pi)
-    test_series = generate_trig_series(dimension, test_t_range)
+
+    trig_test_t_range = (-2*math.pi, 2*math.pi)
+    complex_test_t_range = (-2, 2)
+    test_t_range = complex_test_t_range
+
+    test_series = time_series_gen_function(dimension, test_t_range)
     gen.scale_series(test_series)
     X_test, Y_test = gen.prepare_dataset(test_series, input_timesteps, output_timesteps)
 
@@ -130,7 +166,6 @@ def test_LSTM_model():
         plot_series(true_dp_series, "Y_true")
         plot_series(predicted_dp_series, "Y_predicted")
         plt.title("Test prediction")
-
 
     plt.show()
 
