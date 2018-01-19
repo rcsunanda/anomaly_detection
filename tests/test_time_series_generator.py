@@ -2,7 +2,7 @@
 Tests for TimeSeriesGenerator
 """
 
-import anomaly_detection.time_series_generator as gen
+import anomaly_detection.data_formulation as gen
 import math
 import matplotlib.pyplot as plt
 

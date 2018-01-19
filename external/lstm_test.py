@@ -11,7 +11,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 
-import anomaly_detection.time_series_generator as gen
+import anomaly_detection.data_formulation as gen
 import math
 import numpy as np
 import anomaly_detection.data_point as data_point

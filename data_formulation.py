@@ -4,47 +4,8 @@ TimeSeriesGenerator class
 
 import anomaly_detection.data_point as data_point
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-
-
-# Generate time series of given size
-def generate_time_series(dim, t_range, count, functions, anomaly_rate=0, add_noise=False, noise_var=1):
-    assert (len(t_range) == 2)
-    assert (len(functions) == dim)
-
-    t_vals = np.linspace(t_range[0], t_range[1], num=count)
-    series = []
-    # Sample value for each dimension
-    for idx in range(count):
-        sample_X = np.zeros((dim,))
-        t = t_vals[idx]
-
-        for d in range(dim):
-            func = functions[d]
-            dim_sample_val = func(t, d)
-            sample_X[d] = dim_sample_val
-
-        if add_noise:
-            noise_vec = np.random.multivariate_normal(np.zeros(dim), np.eye(dim)*noise_var)
-            sample_X = np.add(sample_X, noise_vec)
-
-        series.append(data_point.DataPoint(t, sample_X, False, False))
-
-    # Set anomolous points
-
-    anomaly_count = int(count * anomaly_rate)
-    anomalous_point_indexes = np.random.randint(low=0, high=count, size=anomaly_count)
-    for an_idx in anomalous_point_indexes:
-        point = series[an_idx]
-
-        low = np.add(point.X, np.ones(dim))
-        high = np.subtract(point.X, np.ones(dim))
-        deviation_vec = np.random.uniform(low, high)
-
-        point.X = np.add(point.X, deviation_vec)
-        point.true_is_anomaly = True
-
-    return series
 
 
 def scale_series(series):
@@ -138,4 +99,67 @@ def seperate_multi_timestep_series(mult_series, dim, timesteps):
         n += 1
 
     return ret_mult_series
+
+
+def evaluate_detection_results(id, series):
+    total_accurate, true_positives, false_negatives, false_positives, true_negatives = (0,) * 5
+    actual_positives, actual_negatives = (0,) * 2
+    for point in series:
+        actual, predicted = point.true_is_anomaly, point.predicted_is_anomaly
+
+        if actual is True and predicted is True:
+            true_positives += 1
+
+        if actual is True and predicted is False:
+            false_negatives += 1
+
+        if actual is False and predicted is True:
+            false_positives += 1
+
+        if actual is False and predicted is False:
+            true_negatives += 1
+
+        if actual == predicted:
+            total_accurate += 1
+
+        if actual is True:
+            actual_positives += 1
+
+    total = len(series)
+    actual_negatives = total - actual_positives
+
+    overall_accuracy_percentage = total_accurate * 100 / total
+    true_positive_percentage = true_positives * 100 / actual_positives
+    false_negative_percentage = false_negatives * 100 / actual_negatives
+    true_negative_percentage = true_negatives * 100 / actual_negatives
+    false_positives_percentage = false_positives * 100 / actual_negatives
+    precision = true_positives * 100 / true_positives + false_positives
+    F1_score = (2 * true_positives) / (2 * true_positives + false_positives + false_negatives)
+
+    print("series_id={}"
+          "\n\t overall_accuracy_percentage={:.2f}%"
+          "\n\t precision={:.2f}%"
+          "\n\t true_positives_percentage (sensitivity) (correctly detected anomalies)={:.2f}%"
+          "\n\t false_negative_percentage (undetected anomalies)={:.2f}%"
+          "\n\t false_positives_percentage (incorrectly detected anomalies: false warning)={:.2f}%"
+          "\n\t true_negative_percentage (specificity) (correctly detected normal data points)={:.2f}%"
+          "\n\t F1_score={:.2f}"
+          .format(id, overall_accuracy_percentage, precision, true_positive_percentage,
+                  false_negative_percentage, false_positives_percentage, true_negative_percentage, F1_score))
+
+
+def plot_series(series, title):
+
+    dim = len(series[0].X)
+    t = [point.t for point in series]
+
+    for d in range(dim):
+        x = [point.X[d] for point in series]
+        # plt.plot(t, x, label=title + '_dimension-' + str(d))
+        plt.plot(x, label=title + '_dimension-' + str(d))
+
+    plt.title(title)
+    plt.xlabel("t")
+    plt.ylabel("y")
+    plt.legend(loc='upper right')
 
