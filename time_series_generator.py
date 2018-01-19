@@ -28,7 +28,7 @@ def generate_time_series(dim, t_range, count, functions, anomaly_rate=0, add_noi
             noise_vec = np.random.multivariate_normal(np.zeros(dim), np.eye(dim)*noise_var)
             sample_X = np.add(sample_X, noise_vec)
 
-        series.append(data_point.DataPoint(t, sample_X, False, -1))
+        series.append(data_point.DataPoint(t, sample_X, False, False))
 
     # Set anomolous points
 
@@ -72,8 +72,8 @@ def prepare_dataset(series_points, input_timesteps, output_timesteps):
     # Cannot go beyond (not enough datapoints to gather past and future points)
     output_dataset_size = dataset_size - input_timesteps - output_timesteps
 
-    X = np.zeros((dataset_size, input_timesteps, data_dim))
-    Y = np.zeros((dataset_size, data_dim * output_timesteps))
+    X = np.zeros((output_dataset_size, input_timesteps, data_dim))
+    Y = np.zeros((output_dataset_size, data_dim * output_timesteps))
 
     for idx in range(output_dataset_size):
         # Prepare X with current and previous timesteps
