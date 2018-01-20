@@ -197,6 +197,7 @@ def run_system(system_name):
     sys_params = sp.init_system_params(system_name)
 
     training_series = get_training_data(sys_params)
+    df.visualize_dataset(training_series)
 
     model = build_model(sys_params)
 

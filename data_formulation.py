@@ -6,7 +6,7 @@ import anomaly_detection.data_point as data_point
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-
+from mpl_toolkits.mplot3d import Axes3D
 
 def scale_series(series):
 
@@ -166,3 +166,28 @@ def plot_series(series, title, max_dim_to_plot):
     plt.ylabel("y")
     plt.legend(loc='upper right')
 
+
+def visualize_dataset(series):
+
+    assert len(series[0].X) == 3    # There must only be 3 dimensions for visualization
+
+    normal_xs, normal_ys, normal_zs = [], [], []
+    anormalous_xs, anormalous_ys, anormalous_zs = [], [], []
+
+    for point in series:
+        xs, ys, zs = point.X[0], point.X[1], point.X[2]
+        if point.true_is_anomaly:
+            anormalous_xs.append(xs)
+            anormalous_ys.append(ys)
+            anormalous_zs.append(zs)
+        else:
+            normal_xs.append(xs)
+            normal_ys.append(ys)
+            normal_zs.append(zs)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(normal_xs, normal_ys, normal_zs, c='b', marker='o')
+    ax.scatter(anormalous_xs, anormalous_ys, anormalous_zs, c='r', marker='^')
+    plt.show()
