@@ -192,12 +192,26 @@ def draw_plots(sys_params, Y_predicted, Y_test, truncated_test_series):
     plt.show()
 
 
+def do_pca_and_visualize(sys_params, series):
+    dim = len(series[0].X)
+    if (dim > 3):
+        X = df.covert_to_standard_dataset(series)
+        X_reduced = df.do_PCA(X, num_components=3)
+        t_range = (1, len(X_reduced))  # Unused
+        X_reduced_series = df.convert_to_datapoint_series(X_reduced, t_range, series)
+    else:
+        X_reduced_series = series
+
+    df.visualize_dataset(X_reduced_series)
+
+
 def run_system(system_name):
 
     sys_params = sp.init_system_params(system_name)
 
     training_series = get_training_data(sys_params)
-    df.visualize_dataset(training_series)
+
+    do_pca_and_visualize(sys_params, training_series)
 
     model = build_model(sys_params)
 

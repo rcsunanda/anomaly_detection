@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn import decomposition
 
 def scale_series(series):
 
@@ -60,8 +61,9 @@ def prepare_dataset(series_points, input_timesteps, output_timesteps):
 
 
 # series is a n-dimensional time series in a numpy ndarray format
+# original_series, if given, is used to take t and anomaly values
 # Return our standard time series type (list of DataPoints)
-def convert_to_datapoint_series(input_series, t_range):
+def convert_to_datapoint_series(input_series, t_range, original_series=None):
     assert (len(t_range) == 2)
     dataset_size = input_series.shape[0]
     data_dim = input_series.shape[1]
@@ -78,10 +80,28 @@ def convert_to_datapoint_series(input_series, t_range):
             dim_sample_val = input_series[idx][dim]
             sample_X.append(dim_sample_val)
 
-        output_series.append(data_point.DataPoint(t, sample_X, -1, -1))
+        true_is_anomaly, predicted_is_anomaly = False, False
+        if original_series:
+            orig_point = original_series[idx]
+            t = orig_point.t
+            true_is_anomaly = orig_point.true_is_anomaly
+            predicted_is_anomaly = orig_point.predicted_is_anomaly
+
+        output_series.append(data_point.DataPoint(t, sample_X, true_is_anomaly, predicted_is_anomaly))
 
     return output_series
 
+
+def covert_to_standard_dataset(series):
+    dataset_size = len(series)
+    dim = len(series[0].X)
+    X = np.zeros((dataset_size, dim))
+
+    for idx, point in enumerate(series):
+        for d in range(dim):
+            X[idx][d] = point.X[d]
+
+    return X
 
 # Given a series with multiple timesteps, extract the series for each timestep
 # Return those multiple series in a tuple
@@ -168,7 +188,6 @@ def plot_series(series, title, max_dim_to_plot):
 
 
 def visualize_dataset(series):
-
     assert len(series[0].X) == 3    # There must only be 3 dimensions for visualization
 
     normal_xs, normal_ys, normal_zs = [], [], []
@@ -190,4 +209,11 @@ def visualize_dataset(series):
 
     ax.scatter(normal_xs, normal_ys, normal_zs, c='b', marker='o')
     ax.scatter(anormalous_xs, anormalous_ys, anormalous_zs, c='r', marker='^')
-    plt.show()
+    plt.figure()
+
+
+def do_PCA(X, num_components):
+    pca = decomposition.PCA(n_components=num_components)
+    pca.fit(X)
+    X_reduced = pca.transform(X)
+    return X_reduced
