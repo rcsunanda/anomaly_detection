@@ -148,12 +148,15 @@ def evaluate_detection_results(id, series):
                   false_negative_percentage, false_positives_percentage, true_negative_percentage, F1_score))
 
 
-def plot_series(series, title):
+def plot_series(series, title, max_dim_to_plot):
 
     dim = len(series[0].X)
     t = [point.t for point in series]
 
     for d in range(dim):
+        if d > max_dim_to_plot:
+            break;
+
         x = [point.X[d] for point in series]
         # plt.plot(t, x, label=title + '_dimension-' + str(d))
         plt.plot(x, label=title + '_dimension-' + str(d))

@@ -28,10 +28,32 @@ def set_synthetic_params(sys_params):
     sys_params.anomaly_rate = 0.05
     sys_params.diff_anomaly_threshold = 0.12
 
+    # Visualization
+    sys_params.max_dim_to_plot = sys_params.dimension
+
 
 def set_real_dataset_1_params(sys_params):
-    assert False
 
+    # Data files
+    sys_params.training_data_file = 'data/Matching_1_1_Sequencer_1_small_subset_training.csv'
+    sys_params.test_data_file = 'data/Matching_1_1_Sequencer_1_small_subset_test.csv'
+
+    # LSTM network architecture
+    sys_params.dimension = -1    # Set when loading data
+    sys_params.input_timesteps = 3
+    sys_params.output_timesteps = 1
+    sys_params.hidden_layer_units = 50
+
+    # Training params
+    sys_params.batch_size = 20  # Mini batch size in GD/ other algorithm
+    sys_params.epcohs = 20  # 50 is good
+
+    # Anomaly and detection
+    sys_params.anomaly_rate = 0.05
+    sys_params.diff_anomaly_threshold = 0.12
+
+    # Visualization
+    sys_params.max_dim_to_plot = 3
 
 def init_system_params(system_name):
     sys_params = SystemParameters()

@@ -5,10 +5,12 @@ Tests for LSTMNetwork
 import anomaly_detection.data_formulation as df
 import anomaly_detection.utility as utility
 import anomaly_detection.sys_params as sp
+import anomaly_detection.data_point as dp
 
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
 from keras.models import Sequential
 from keras.layers import Dense
@@ -21,10 +23,6 @@ def get_synthetic_training_data(sys_params):
     train_series = sys_params.data_generation_func(sys_params.dimension,
                                                    sys_params.train_data_t_range, 1000, anomaly_rate=0)
     return train_series
-
-
-def get_real_training_data(sys_params):
-    assert False
 
 
 def get_synthetic_test_data(sys_params):
@@ -44,8 +42,39 @@ def get_synthetic_test_data(sys_params):
     return X_test, Y_test, truncated_test_series
 
 
+def load_series_from_file(filename):
+    with open(filename, newline='') as file:
+        reader = csv.reader(file)
+        series = []
+        for i, row in enumerate(reader):
+            if i > 0:   # Ignore first row with column names
+                sample_X = np.array(row[1:])    # Ignore timestamp
+                series.append(dp.DataPoint(i, sample_X, False, False))
+
+    return series
+
+
+def get_real_training_data(sys_params):
+    series = load_series_from_file(sys_params.training_data_file)
+    sys_params.dimension = len(series[0].X)  # Ignore timestamp column
+    return series
+
+
 def get_real_test_data(sys_params):
-    assert False
+    input_timesteps = sys_params.input_timesteps
+    output_timesteps = sys_params.output_timesteps
+
+    test_series = load_series_from_file(sys_params.test_data_file)
+
+    sys_params.test_data_t_range = (1, len(test_series))
+
+    test_series[int(len(test_series)/2)].true_is_anomaly = True   # Temporary; so that actual_positives > 0 (avoid division by zero)
+
+    df.scale_series(test_series)
+    X_test, Y_test = df.prepare_dataset(test_series, input_timesteps, output_timesteps)
+    truncated_test_series = test_series[input_timesteps: -output_timesteps]
+
+    return X_test, Y_test, truncated_test_series
 
 
 def get_training_data(sys_params):
@@ -86,7 +115,7 @@ def build_model(sys_params):
 def train_model(sys_params, model, train_series):
 
     df.scale_series(train_series)
-    df.plot_series(train_series, "Training series")
+    df.plot_series(train_series, "Training series", sys_params.max_dim_to_plot)
 
     X, Y = df.prepare_dataset(train_series, sys_params.input_timesteps, sys_params.output_timesteps)
 
@@ -140,8 +169,8 @@ def draw_plots(sys_params, Y_predicted, Y_test, truncated_test_series):
         # True, vs predicted multi-dimensional time-series plot
 
         plt.figure()
-        df.plot_series(truncated_test_series, "Y_true")
-        df.plot_series(predicted_dp_series, "Y_predicted")
+        df.plot_series(truncated_test_series, "Y_true", sys_params.max_dim_to_plot)
+        df.plot_series(predicted_dp_series, "Y_predicted", sys_params.max_dim_to_plot)
         plt.title("Test prediction")
 
         for j, point in enumerate(truncated_test_series):
@@ -183,4 +212,5 @@ def run_system(system_name):
 
 
 if __name__ == "__main__":
-    run_system("synthetic_dataset")
+    # run_system("synthetic_dataset")
+    run_system("real_dataset_1")
