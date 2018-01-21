@@ -4,6 +4,7 @@ TimeSeriesGenerator class
 
 import anomaly_detection.data_point as data_point
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from mpl_toolkits.mplot3d import Axes3D
@@ -102,6 +103,21 @@ def covert_to_standard_dataset(series):
             X[idx][d] = point.X[d]
 
     return X
+
+
+def sanitize_series(series):
+    dim = len(series[0].X)
+    for idx, point in enumerate(series):
+        x = point.X
+        assert len(x) == dim
+        for d, val in enumerate(x):
+            try:
+                float_val = float(val)
+            except ValueError:
+                print("sanitize_series: Value error when converting to float")
+                print("\t idx={}, dim={}, val={}, point={}".format(idx, d, val, point))
+                sys.exit(1)
+
 
 # Given a series with multiple timesteps, extract the series for each timestep
 # Return those multiple series in a tuple

@@ -20,12 +20,16 @@ from sklearn.metrics import mean_squared_error
 
 
 def get_synthetic_training_data(sys_params):
+    print("get_synthetic_training_data: Generating synthetic training data")
+
     train_series = sys_params.data_generation_func(sys_params.dimension,
                                                    sys_params.train_data_t_range, 1000, anomaly_rate=0)
     return train_series
 
 
 def get_synthetic_test_data(sys_params):
+    print("get_synthetic_test_data: Generating synthetic test data, and prepare for predicting")
+
     input_timesteps = sys_params.input_timesteps
     output_timesteps = sys_params.output_timesteps
 
@@ -55,16 +59,24 @@ def load_series_from_file(filename):
 
 
 def get_real_training_data(sys_params):
+    print("get_real_training_data: Loading real training data and sanitizing. filename={}".format(sys_params.training_data_file))
     series = load_series_from_file(sys_params.training_data_file)
     sys_params.dimension = len(series[0].X)  # Ignore timestamp column
+    print("\t sys_params.dimension={}".format(sys_params.dimension))
+    df.sanitize_series(series)
     return series
 
 
 def get_real_test_data(sys_params):
+    print("get_real_test_data: Loading real test data and preparing for predicting. filename={}".
+          format(sys_params.test_data_file))
+
     input_timesteps = sys_params.input_timesteps
     output_timesteps = sys_params.output_timesteps
 
     test_series = load_series_from_file(sys_params.test_data_file)
+
+    df.sanitize_series(test_series)
 
     sys_params.test_data_t_range = (1, len(test_series))
 
@@ -93,6 +105,8 @@ def get_test_data(sys_params):
 
 def build_model(sys_params):
 
+    print("build_model: Initializing and compiling LSTM model")
+
     # LSTM network architecture
     input_timesteps = sys_params.input_timesteps
     output_timesteps = sys_params.output_timesteps
@@ -114,6 +128,8 @@ def build_model(sys_params):
 
 def train_model(sys_params, model, train_series):
 
+    print("train_model: Starting LSTM model training")
+
     df.scale_series(train_series)
     df.plot_series(train_series, "Training series", sys_params.max_dim_to_plot)
 
@@ -129,8 +145,12 @@ def train_model(sys_params, model, train_series):
     # plt.plot(history.history['val_loss'], label='test')
     plt.legend()
 
+    print("train_model: Finished LSTM model training")
+
 
 def detect_anomalies(sys_params, Y_predicted, Y_test, truncated_test_series):
+
+    print("detect_anomalies: Detecting anomalies")
 
     # Seperate out predicted multiple timeseries (for multiple output timesteps)
 
@@ -155,6 +175,8 @@ def detect_anomalies(sys_params, Y_predicted, Y_test, truncated_test_series):
 
 
 def draw_plots(sys_params, Y_predicted, Y_test, truncated_test_series):
+    print("draw_plots: Drawing plots (true vs predicted series and anomalies)")
+
     Y_predicted_multi_series = df.seperate_multi_timestep_series(Y_predicted, sys_params.dimension, sys_params.output_timesteps)
 
     # Plot each of output series corresponding to each output_timesteps
@@ -193,6 +215,8 @@ def draw_plots(sys_params, Y_predicted, Y_test, truncated_test_series):
 
 
 def do_pca_and_visualize(sys_params, series):
+    print("do_pca_and_visualize: Running PCA for 3 components, and visualizing in 3D space")
+
     dim = len(series[0].X)
     if (dim > 3):
         X = df.covert_to_standard_dataset(series)
